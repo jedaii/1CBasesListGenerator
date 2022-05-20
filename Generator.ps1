@@ -1,3 +1,6 @@
+$conf = Import-PowerShellDataFile -path .\test.psd1
+
+
 $bases = @{}
 $csv = Import-Csv -Delimiter ',' -Path .\1c-bases.csv
 foreach ($row in $csv) {
@@ -39,7 +42,7 @@ function New-BasesConfig {
     foreach ($base in $bases.GetEnumerator() ) {
         $i += 1
         $configFile = New-FileName -baseName $base.key
-        $configFile = '.\' + $configFile
+        $configFile = $conf.configFolders.Bases + $configFile + '.v8i'
         Copy-Item $template -Destination $configFile
         $config = Get-Content -Path $configFile -Raw
         $baseNamePattern = '#baseName#'
@@ -53,3 +56,29 @@ function New-BasesConfig {
 }
 
 New-BasesConfig -bases $bases
+
+function New-GroupsConfig {
+        [CmdletBinding()]
+        param (
+            [Parameter()]
+            [string]
+            $OUName
+        )
+
+        $users = Get-ADUser -Filter * -SearchBase "OU=Users,OU=RMRC,DC=uo,DC=int" | Select-object SamAccountName
+        foreach ($user in $users) {
+            $nameConfigFile = $conf.configFolders.Groups + $user.SamAccountName + '.cfg'
+            New-Item -ItemType File $nameConfigFile
+            foreach ($config in (Get-ChildItem $conf.configFolders.Bases *.v8i)) {
+                $content = 'CommonInfoBases=' + $conf.configFolders.Bases + $config
+                Add-Content -path $nameConfigFile -Value $content
+            }
+            
+
+        }
+
+   
+}
+
+New-GroupsConfig
+
