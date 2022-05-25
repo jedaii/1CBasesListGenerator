@@ -49,7 +49,7 @@ function New-BasesConfig {
         $basePathPattern = '#basePath#'
         $config = $config -replace $baseNamePattern, $base.key
         $config = $config -replace $basePathPattern, $base.Value
-        Set-Content -Path $configFile -Value $config
+        Set-Content -Path $configFile -Value $config -Encoding UTF8
 
     }
     
@@ -65,13 +65,13 @@ function New-GroupsConfig {
             $OUName
         )
 
-        $users = Get-ADUser -Filter * -SearchBase "OU=Users,OU=RMRC,DC=uo,DC=int" | Select-object SamAccountName
+        $users = Get-ADUser -Filter * -SearchBase $conf.usersSource.OU | Select-object SamAccountName
         foreach ($user in $users) {
             $nameConfigFile = $conf.configFolders.Groups + $user.SamAccountName + '.cfg'
             New-Item -ItemType File $nameConfigFile
             foreach ($config in (Get-ChildItem $conf.configFolders.Bases *.v8i)) {
                 $content = 'CommonInfoBases=' + $conf.configFolders.Bases + $config
-                Add-Content -path $nameConfigFile -Value $content
+                Add-Content -path $nameConfigFile -Value $content -Encoding UTF8
             }
             
 
@@ -81,4 +81,24 @@ function New-GroupsConfig {
 }
 
 New-GroupsConfig
+
+function Add-ConfigsToUserProfiles {
+    param (
+        [Parameter()]
+        [string]
+        $configs
+    )
+
+    foreach ($config in (Get-ChildItem $conf.configFolders.Groups *.cfg | Select-object FullName, Name)) {
+        $cfgIndex = $config.Name.lastindexof('.')
+        $user = $config.Name.substring(0, $cfgIndex)
+        $dest = "c:\users\$user\appdata\roaming\1C\1CEStart\1cestart.cfg"
+        Invoke-Command -ComputerName $conf.server1C.Name -ScriptBlock { Add-Content -Path $using:dest -Value ('CommonCfgLocation=' + $using:config.FullName) }
+    }
+    
+}
+
+Add-ConfigsToUserProfiles
+
+
 
