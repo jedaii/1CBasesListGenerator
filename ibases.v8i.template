@@ -1,10 +1,5 @@
 ﻿[#baseName#]
 Connect=File="#basePath#";
-ID=fdc1778f-d8e7-4d9f-992b-b8e91b8200d5
-OrderInList=16384
-Folder=/
-OrderInTree=256
-External=0
 ClientConnectionSpeed=Normal
 App=Auto
 WA=1
